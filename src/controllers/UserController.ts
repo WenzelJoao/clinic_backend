@@ -1,54 +1,27 @@
 import type { Request, Response } from "express";
-import type { Usuario } from "../prisma/generated/prisma/client";
+import type { Usuario } from "../prisma/generated/prisma/client"
+import { UserService, userService } from "../services/UserService";
 
 class UserController {
     constructor(private readonly service: UserService) {
     }
 
-    async buscarUsuarioId(req: Request, res: Response) {
+    async listarTodosUsuarios(_: Request, res: Response) {
         try {
-            const dadosUsuario = req.body as Partial<Usuario>
-            const dadosBuscar = await this.service.buscarUsuarioId(dadosUsuario.id)
-            return res.status(201).json({
-                message: "Usuário localizado!",
-                data: dadosBuscar
-            })
-        } catch (error) {
-            console.log(error);
-            return res.status(404).json({
-                error
-            })
-
-        }
-    }
-
-    async buscarUsuario(req: Request, res: Response) {
-        try {
-            const dadosUsuario = req.body as Partial<Usuario>
-            const dadosBuscar = await this.service.buscarPorId(dadosUsuario)
-            return res.status(201).json({
-                message: "usuários localizados!",
-                data: dadosBuscar
-            })
-
+            const usuarios = await this.service.listarTodosUsuarios();
+            return res.status(200).json(usuarios)
         } catch (error) {
             console.log(error)
             return res.status(404).json({
                 error
             })
-
         }
     }
 
     async criarUsuario(req: Request, res: Response) {
         try {
-            const dadosUsuario = req.body as Partial<Usuario>
-            const usuarioCriado = await this.service.usuario.create({
-                data: {
-                    email: dadosUsuario.email,
-                    nome: dadosUsuario.nome || null,
-                }
-            })
+            const dadosUsuario = req.body as Usuario
+            const usuarioCriado = await this.service.criarUsuario(dadosUsuario)
             return res.status(201).json(usuarioCriado)
         } catch (error) {
             console.log(error)
@@ -58,40 +31,48 @@ class UserController {
         }
     }
 
-    async criarUsuarioId(req: Request, res: Response) {
+    async buscarUsuarioId(req: Request, res: Response) {
+        try {
+            const idUsuario = Number(req.params.id)
+            const usuario = await this.service.buscarUsuarioId(idUsuario)
+            return res.status(200).json(usuario)
+        } catch (error) {
+            console.log(error)
+            return res.status(404).json({
+                error
+            })
+        }
+    }
+
+    async atualizarUsuario(req: Request, res: Response) {
         try {
             const idUsuario = Number(req.params.id)
             const dadosParaAtualizar = req.body as Omit<Usuario, 'id'>
-            const usuarioAtualizado = await this.service.usuario.update({
-                data: {
-                    ...dadosParaAtualizar
-                },
-                where: {
-                    id: idUsuario
-                }
-            })
-
+            const usuarioAtualizado = await this.service.atualizarUsuario(idUsuario, dadosParaAtualizar)
             return res.status(200).json(usuarioAtualizado);
         } catch (error) {
-
+            console.log(error)
+            return res.status(404).json({
+                error
+            })
         }
     }
+
 
     async deletarUsuario(req: Request, res: Response) {
         try {
             const idUsuario = Number(req.params.id)
-            const usuarioDeletado = await this.service.usuario.delete({
-                where: {
-                    id: idUsuario
-                }
-            })
-
+            const usuario = await this.service.deletarUsuario(idUsuario)
             return res.status(200).json({
                 mensagem: "Usuário deletado com sucesso!",
-                data: usuarioDeletado
+                data: usuario
             });
         } catch (error) {
-
+            console.log(error)
+            return res.status(404).json({
+                error
+            })
         }
     }
 }
+export const userController = new UserController(userService)
